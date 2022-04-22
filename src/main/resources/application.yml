@@ -1,0 +1,52 @@
+spring:
+  resources:
+    add-mappings: true
+    cache:
+      cachecontrol:
+        max-age: 3600
+    chain:
+      cache: true
+      enabled: true
+      compressed: true
+      html-application-cache: true
+    static-locations: classpath:/static/
+  thymeleaf:
+    cache: false
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/seckill?useUnicode=true&characeterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+#    url: jdbc:mysql://10.176.24.51:3306/seckill?useUnicode=true&characeterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+#    password: 000000f
+#    password: zzh123
+    password: Aa112211!
+    hikari:
+      pool-name: DateHikariCP
+      minimum-idle: 5
+      idle-timeout: 100000
+      maximum-pool-size: 10
+      auto-commit: true
+      max-lifetime: 100000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+  redis:
+    host: 10.176.24.51
+#    host: localhost
+    port: 6379
+    database: 0
+    timeout: 10000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: 10000ms
+        max-idle: 200
+        min-idle: 5
+    password: 000000f
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*Mapper.xml
+  type-aliases-package: com.chy.seckill_demo.pojo
+
+logging:
+  level:
+    com.chy.seckill_demo.mapper: debug
