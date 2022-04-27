@@ -27,9 +27,9 @@ public class UserController {
     }
 
 
-    @RequestMapping("/mq")
-    @ResponseBody
-    public void mq() {
-        sender.send("Hello world!");
-    }
+//    @RequestMapping("/mq")
+//    @ResponseBody
+//    public void mq() {
+//        sender.send("Hello world!");
+//    }
 }

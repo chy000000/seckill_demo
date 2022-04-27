@@ -52,9 +52,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 .eq("goods_id", goods.getId())
                 .gt("stock_count", 0)
                 .setSql("stock_count = stock_count - 1"));
-        if (!seckillGoodsResult) {
+        //判断是否还有库存，没有则在redis中设置key
+        if (seckillGoods.getStockCount() < 1) {
+            redisTemplate.opsForValue().set("isEmptyStock:"+goods.getId(), "0");
             return null;
         }
+        // 判断是否还有库存
+//        if (!seckillGoodsResult) {
+//            return null;
+//        }
 //        seckillGoodsService.updateById(seckillGoods);
         Order order = new Order();
         order.setUserId(user.getId());
