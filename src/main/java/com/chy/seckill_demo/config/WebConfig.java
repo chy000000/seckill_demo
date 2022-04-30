@@ -1,9 +1,11 @@
 package com.chy.seckill_demo.config;
 
+import com.chy.seckill_demo.interceptor.AccessLimitInterceptor;
 import com.chy.seckill_demo.interceptor.LoginInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 /**
@@ -12,9 +14,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * @Description:
  */
 @Configuration
-public class WebConfig extends WebMvcConfigurerAdapter {
-      @Autowired
+public class WebConfig implements WebMvcConfigurer {
+    @Autowired
     LoginInterceptor loginInterceptor;
+    @Autowired
+    AccessLimitInterceptor accessLimitInterceptor;
+
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -27,5 +32,10 @@ public class WebConfig extends WebMvcConfigurerAdapter {
                 .excludePathPatterns("/jquery-validation/**")
                 .excludePathPatterns("/layer/**")
                 .excludePathPatterns("/goods/toList");
+        registry.addInterceptor(this.accessLimitInterceptor);
     }
+
+
+
+
 }

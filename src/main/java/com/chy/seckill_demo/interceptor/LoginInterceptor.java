@@ -1,10 +1,12 @@
 package com.chy.seckill_demo.interceptor;
 
+import com.chy.seckill_demo.config.UserContext;
 import com.chy.seckill_demo.pojo.User;
 import com.chy.seckill_demo.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+//import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +19,7 @@ import java.io.IOException;
  * @Description:
  */
 @Component
-public class LoginInterceptor extends HandlerInterceptorAdapter {
+public class LoginInterceptor implements HandlerInterceptor {
     @Autowired
     IUserService userService;
 
@@ -47,6 +49,7 @@ public class LoginInterceptor extends HandlerInterceptorAdapter {
                 response.sendRedirect("/login/toLogin");
                 return false;
             } else {
+                UserContext.setUser(user);
                 return true;
             }
         }

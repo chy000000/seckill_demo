@@ -2,6 +2,8 @@ package com.chy.seckill_demo.controller;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.chy.seckill_demo.config.AccessLimit;
+import com.chy.seckill_demo.config.UserContext;
 import com.chy.seckill_demo.pojo.Order;
 import com.chy.seckill_demo.pojo.SeckillMessage;
 import com.chy.seckill_demo.pojo.SeckillOrder;
@@ -15,6 +17,8 @@ import com.chy.seckill_demo.utils.JsonUtil;
 import com.chy.seckill_demo.vo.GoodsVo;
 import com.chy.seckill_demo.vo.RespBean;
 import com.chy.seckill_demo.vo.RespBeanEnum;
+import com.wf.captcha.ArithmeticCaptcha;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,23 +27,23 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author: chy
  * @Date: 2022/4/15 21:42
  * @Description:
  */
+@Slf4j
 @Controller
 @RequestMapping({"/seckill"})
 public class SecKillController implements InitializingBean {
@@ -99,12 +103,18 @@ public class SecKillController implements InitializingBean {
      * @param ticket
      * @return
      */
-    @RequestMapping(value = "/doSeckill", method = RequestMethod.POST)
+    @RequestMapping(value = "/{path}/doSeckill", method = RequestMethod.POST)
     @ResponseBody
     public RespBean doSeckill(HttpServletRequest request, HttpServletResponse response, Long goodsId,
-                              @CookieValue("userTicket") String ticket) {
+                              @CookieValue("userTicket") String ticket,
+                              @PathVariable String path) {
         User user = this.userService.getUserByCookie(ticket, request, response);
         ValueOperations valueOperations = redisTemplate.opsForValue();
+
+        boolean check = orderService.checkPath(user, goodsId, path);
+        if (!check) {
+            return RespBean.error(RespBeanEnum.REQUEST_ILLEGAL);
+        }
         SeckillOrder seckillOrder = (SeckillOrder) redisTemplate.opsForValue().get("order:" + user.getId() + ":" + goodsId);
         if (seckillOrder != null) {
             return RespBean.error(RespBeanEnum.REPEAT_ERROR);
@@ -135,6 +145,47 @@ public class SecKillController implements InitializingBean {
 //        }
 //        Order order = this.orderService.seckill(user, goods);
 //        return RespBean.success(order);
+    }
+
+    @AccessLimit(second = 5, maxCount=5, needLogin=true)
+    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getPath(Long goodsId, String captcha) {
+//        User user = userService.getUserByCookie(ticket, request, response);
+        User user = UserContext.getUser();
+//        String uri = request.getRequestURI();
+//        Integer count = (Integer) redisTemplate.opsForValue().get(uri + ":" + user.getId());
+//        if (count==null) {
+//            redisTemplate.opsForValue().set(uri + ":" + user.getId(), 1, 5, TimeUnit.SECONDS);
+//        } else if (count<5) {
+//            redisTemplate.opsForValue().increment(uri + ":" + user.getId());
+//        } else {
+//            return RespBean.error(RespBeanEnum.ACCESS_LIMIT_REACHED);
+//        }
+        boolean check = orderService.checkCaptcha(user, goodsId, captcha);
+        if (!check) {
+            return RespBean.error(RespBeanEnum.ERROR_CAPTCHA);
+        }
+        String str = orderService.createPath(user, goodsId);
+        return RespBean.success(str);
+    }
+
+    @RequestMapping(value = "captcha", method = RequestMethod.GET)
+    public void verify(HttpServletRequest request, HttpServletResponse response, Long goodsId,
+                       @CookieValue("userTicket") String ticket) {
+        User user = userService.getUserByCookie(ticket, request, response);
+        response.setContentType("image/gif");
+        response.setHeader("Pragma", "No-cache");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setDateHeader("Expires", 0);
+        ArithmeticCaptcha captcha = new ArithmeticCaptcha(130, 32, 3);
+        redisTemplate.opsForValue().set("captcha:" + user.getId() + ":" + goodsId, captcha.text(), 300, TimeUnit.SECONDS);
+        try {
+            captcha.out(response.getOutputStream());
+        } catch (IOException e) {
+            log.error("验证码生成失败", e.getMessage());
+        }
+
     }
 
     @RequestMapping(value = "/getResult", method = RequestMethod.GET)
