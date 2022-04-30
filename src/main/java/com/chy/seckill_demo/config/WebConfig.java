@@ -35,7 +35,4 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(this.accessLimitInterceptor);
     }
 
-
-
-
 }

@@ -123,7 +123,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return false;
         }
         String redisCaptcha = (String) redisTemplate.opsForValue().get("captcha:" + user.getId() + ":" + goodsId);
-        log.info("输入captcha：" + captcha + "，正确captcha：" + redisCaptcha);
+//        log.info("输入captcha：" + captcha + "，正确captcha：" + redisCaptcha);
         return captcha.equals(redisCaptcha);
     }
 }
